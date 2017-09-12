@@ -26,9 +26,19 @@ function sceneObjects(fMesh){
 			else if(this.playerIds.indexOf(world.players[p].id) > -1){
 				for(var e = 0; e<this.otherPlayers.length; e++){
 					if(this.otherPlayers[e].id == world.players[p].id){
-						this.otherPlayers[e].position.x = world.players[p].location.x
-						this.otherPlayers[e].position.y = world.players[p].location.y
-						this.otherPlayers[e].position.z = world.players[p].location.z
+						this.otherPlayers[e].mesh.position.x = world.players[p].location.x
+						this.otherPlayers[e].mesh.position.y = world.players[p].location.y
+						this.otherPlayers[e].mesh.position.z = world.players[p].location.z
+						this.otherPlayers[e].mesh.rotation.x = world.players[p].rotation.x
+						this.otherPlayers[e].mesh.rotation.y = world.players[p].rotation.y
+						this.otherPlayers[e].mesh.rotation.z = world.players[p].rotation.z
+						this.otherPlayers[e].vel.x = world.players[p].vel.x
+						this.otherPlayers[e].vel.y = world.players[p].vel.y
+						this.otherPlayers[e].vel.z = world.players[p].vel.z
+						this.otherPlayers[e].rotVel.x = world.players[p].rotVel.x
+						this.otherPlayers[e].rotVel.y = world.players[p].rotVel.y
+						this.otherPlayers[e].rotVel.z = world.players[p].rotVel.z
+
 					}
 				}
 				
@@ -36,13 +46,17 @@ function sceneObjects(fMesh){
 
 			else{
 				this.playerIds.push(world.players[p].id)
-				var material = new THREE.MeshPhongMaterial( { color: 0xff0000, specular: 0xffffff, wireframe:false } );
+				var material = new THREE.MeshPhongMaterial( { color: Math.random()*0xffffff, specular: 0xffffff, wireframe:false } );
 				var geometry = new THREE.BoxGeometry(1,1,1 );
 				enemy = new THREE.Mesh( geometry, material );
 				enemy.position.x = world.players[p].location.x
 				enemy.position.y = world.players[p].location.y
 				enemy.position.z = world.players[p].location.z
-				this.otherPlayers.push(enemy)
+				enemy.rotation.x = world.players[p].rotation.x
+				enemy.rotation.y = world.players[p].rotation.y
+				enemy.rotation.z = world.players[p].rotation.z
+				var enemyObj = {"mesh":enemy,"vel":new THREE.Vector3(world.players[p].vel.x,world.players[p].vel.y,world.players[p].vel.z),"rotVel":new THREE.Vector3(world.players[p].rotVel.x,world.players[p].rotVel.y,world.players[p].rotVel.z)}
+				this.otherPlayers.push(enemyObj)
 				scene.add(enemy)
 			}
 		}
@@ -93,7 +107,7 @@ function init() {
 	renderer = new THREE.WebGLRenderer( { antialias: true } );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	document.body.appendChild( renderer.domElement );				
-	
+	sendData()
 }
 function playerMovement(){
 
@@ -158,13 +172,11 @@ function playerMovement(){
 	var rotationalAcceleration = .05
 	var maxSpeed = 5
 	var maxRotSpeed = 2
-	var rotationalDecay = 1.02
 
 	movement.multiplyScalar(acceleration)
 	rotation.multiplyScalar(rotationalAcceleration)
 	objects.fighter.vel.add(movement)
 	objects.fighter.rotVel.add(rotation)
-	objects.fighter.rotVel.divideScalar(rotationalDecay)
 	
 	objects.fighter.vel.clampLength(-maxSpeed,maxSpeed)
 	objects.fighter.rotVel.clampLength(-maxRotSpeed, maxRotSpeed)
@@ -174,6 +186,9 @@ function playerMovement(){
 }
 
 function animate( time ) {
+	objects.refreshWorld()
+	//console.log(world)
+
 	dt = (time - prevTime)/1000
 	requestAnimationFrame( animate );
 
@@ -190,6 +205,8 @@ function animate( time ) {
 	dRot = new THREE.Vector3()
 	dRot.copy(objects.fighter.rotVel)
 	dRot.multiplyScalar(dt)
+
+
 	//objects.fighter.mesh.rotation.x+= dRot.x//(dRot)
 	//objects.fighter.mesh.rotation.y+= dRot.y//(dRot)
 	//console.log(dRot)
@@ -219,10 +236,31 @@ function animate( time ) {
 	// yawAxis = new Three.Vector3()
 	// yawAxis.copy(objects.fighter.mesh.rotation)
 
+	var rotationalDecay = Math.pow(1.02, 1000 * dt / 16)
+	objects.fighter.rotVel.divideScalar(rotationalDecay)
+
+
+	//move For Other players
+	for(var e = 0; e< objects.otherPlayers.length; e++){
+		var v = new THREE.Vector3()
+		v.copy(objects.otherPlayers[e].vel)
+		v.multiplyScalar(dt)
+		objects.otherPlayers[e].mesh.position.add(v)
+
+		vR = new THREE.Vector3()
+		vR.copy(objects.otherPlayers[e].rotVel)
+		vR.multiplyScalar(dt)
+	
+		objects.otherPlayers[e].mesh.rotateX(vR.x)
+		objects.otherPlayers[e].mesh.rotateY(vR.y)
+		objects.otherPlayers[e].mesh.rotateZ(vR.z)
+		objects.otherPlayers[e].rotVel.divideScalar(rotationalDecay)
+
+	}
 
 
 
-	socket.emit("location",{"id":id,"x":objects.fighter.mesh.position.x, "y":objects.fighter.mesh.position.y,"z":objects.fighter.mesh.position.z})
+	
 	renderer.render( scene, camera );
 	prevTime = time
 
@@ -271,116 +309,29 @@ function Keyboard(){
 			}
 		}
 
-
-
 	})
-	
-	
-	// this.rotWay = 1;
-	// camera.vel = new point3d(0,0,0)
-	// this.doMovement = function(camera){
-	// 	var dC = new Date();
-	// 	var dt = dC-this.prevTime
-		
-		
-	// 	var rotSp =.05
-	// 	var movement = new point3d(0,0,0)
-	// 	if(this.keysDown.indexOf("Q") > -1){
-	// 		//camera.position.z+=10;
-	// 		movement.y++;
-
-	// 	}
-	// 	if(this.keysDown.indexOf("E") > -1){
-	// 		//camera.position.z-=10;
-	// 		movement.y--;
-
-	// 	}
-
-	// 	if(this.keysDown.indexOf("W") > -1){
-	// 		//camera.position.y+=10;
-	// 		movement.z++;
-
-	// 	}
-
-	// 	if(this.keysDown.indexOf("S") > -1){
-	// 		//camera.position.y-=10;
-	// 		movement.z--;
-	// 	}
-	// 	if(this.keysDown.indexOf("A") > -1){
-	// 		//camera.position.x+=10;
-	// 		movement.x--;
-	// 	}
-	// 	if(this.keysDown.indexOf("D") > -1){
-	// 		//camera.position.x-=10;
-	// 		movement.x++;
-	// 	}
-	// 	var prevRot = camera.rotation.copyScale(1);
-	// 	if(this.keysDown.indexOf("&") > -1){
-	// 		camera.rotation.x-=.05*rotSp;
-			
-	// 	}
-	// 	if(this.keysDown.indexOf("(") > -1){
-	// 		camera.rotation.x+=.05*rotSp;
-			
-	// 	}
-	// 	if(this.keysDown.indexOf("%") > -1){
-	// 		camera.rotation.y-=.05*rotSp * this.rotWay;
-			
-	// 	}
-	// 	if(this.keysDown.indexOf("'") > -1){
-	// 		camera.rotation.y+=.05*rotSp * this.rotWay;
-			
-	// 	}
-	// 	if(this.keysDown.indexOf(" ") > -1 && camera.stepsSinceBullet > 70){
-	// 		camera.stepsSinceBullet = 0;
-	// 		spawnBullet();
-	// 	}
-	
-	// 	camera.rotVel.add( camera.rotation.vectorTo(prevRot));
-
-	// 	//console.log(this.keysDown)
-
-	// 	movement.normalize();
-	// 	var speed = .8
-
-	// 	var forward = camera.forward();
-	// 	var left = camera.left();
-	// 	var up = camera.up();
-	// 	forward.normalize();
-	// 	left.normalize();
-	// 	up.normalize();
-	// 	var deltaf = forward//.scale(movement.x)
-	// 	deltaf.scale(speed*movement.z/10)
-		
-	// 	var deltal = left
-	// 	deltal.scale(speed*movement.x/20)
-		
-	// 	var deltau = up
-	// 	deltau.scale(speed*movement.y/20)
-
-	// 	deltaf.add(deltau)
-	// 	deltaf.add(deltal)
-	// 	deltaf.scale(1/10)
-
-	// 	var moveSpeed = 60;
-	// 	camera.vel.add( deltaf )
-		
-	// 	camera.rotation = prevRot;
-		
-	// 	camera.position.add(camera.vel.copyScale(dt/1000*moveSpeed))
-	// 	//camera.position.add(new point3d(camera.rotation.x,camera.rotation));
-	// 	//camera.vel = camera.vel.copyScale(1000/30*moveSpeed)
-	// 	camera.vel.scale(.99)
-	// 	camera.rotVel.cap(.04);
-	// 	camera.rotation.add(camera.rotVel.copyScale(dt/30))
-	// 	camera.rotVel.scale(.99)
-	// 	this.prevTime = dC
-
-		
-
-	// }
-
 
 
 
 }
+function sendData(){
+	socket.emit("playerData",{
+				"id":id,
+				"x":objects.fighter.mesh.position.x,
+				"y":objects.fighter.mesh.position.y,
+				"z":objects.fighter.mesh.position.z,
+				"rotX":objects.fighter.mesh.rotation.x,
+				"rotY":objects.fighter.mesh.rotation.y,
+				"rotZ":objects.fighter.mesh.rotation.z,
+				"velX":objects.fighter.vel.x,
+				"velY":objects.fighter.vel.y,
+				"velZ":objects.fighter.vel.z,
+				"rotVelX":objects.fighter.rotVel.x,
+				"rotVelY":objects.fighter.rotVel.y,
+				"rotVelZ":objects.fighter.rotVel.z
+				})
+	window.setTimeout(sendData,16)
+
+}
+
+

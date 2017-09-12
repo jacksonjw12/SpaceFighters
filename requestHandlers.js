@@ -7,6 +7,7 @@ var world = {
 	// 	"socket":123,
 	// 	"name":"jack"
 		//Location:xyz
+		//Rotationxyz
 	//later include private id only server and client know
 	// }
 
@@ -44,6 +45,9 @@ function getPlayerVisibleWorld(){
 		wp.id = world.players[p].id
 		wp.name = world.players[p].name
 		wp.location = world.players[p].location
+		wp.rotation = world.players[p].rotation
+		wp.vel = world.players[p].vel
+		wp.rotVel = world.players[p].rotVel
 		w.players.push(wp)
 	}
 	return w
@@ -60,6 +64,9 @@ function initializeSockets(server){
  			p.name = data.name
  			p.socket = socket
  			p.location = {"x":0,"y":0,"z":0}
+ 			p.rotation = {"x":0,"y":0,"z":0}
+ 			p.vel = {"x":0,"y":0,"z":0}
+ 			p.rotVel = {"x":0,"y":0,"z":0}
 
 
  			world.players.push(p)
@@ -71,16 +78,27 @@ function initializeSockets(server){
  			//console.log(world)
  		})
 
- 		socket.on("location", function(data){
+ 		socket.on("playerData", function(data){
  			for(var p = 0; p<world.players.length; p++){
  				if(world.players[p].id == data.id){
  					world.players[p].location.x = data.x
  					world.players[p].location.y = data.y
  					world.players[p].location.z = data.z
+ 					world.players[p].rotation.x = data.rotX
+ 					world.players[p].rotation.y = data.rotY
+ 					world.players[p].rotation.z = data.rotZ
+ 					world.players[p].vel.x = data.velX
+ 					world.players[p].vel.y = data.velY
+ 					world.players[p].vel.z = data.velZ
+ 					world.players[p].rotVel.x = data.rotVelX
+ 					world.players[p].rotVel.y = data.rotVelY
+ 					world.players[p].rotVel.z = data.rotVelZ
+
+
  					break;
  				}
  			}
- 			socket.emit("worldRefresh",{"world":getPlayerVisibleWorld()})
+ 			io.to("room1").emit("worldRefresh",{"world":getPlayerVisibleWorld()})
  		})
 
 		socket.on('disconnect', function (data){ 	

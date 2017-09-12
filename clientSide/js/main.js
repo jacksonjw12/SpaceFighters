@@ -38,7 +38,7 @@ function setSockets(){
 	socket.on("worldRefresh", function(data){
 		world = data.world
 		//console.log(world)
-		objects.refreshWorld()
+		
 	})
 	socket.emit('connectPlayer', {"name":name})
 
