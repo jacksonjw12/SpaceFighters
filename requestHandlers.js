@@ -77,7 +77,9 @@ function initializeSockets(server){
 
  			//console.log(world)
  		})
-
+ 		socket.on("test", function(data){
+ 			console.log(world)
+ 		})
  		socket.on("playerData", function(data){
  			for(var p = 0; p<world.players.length; p++){
  				if(world.players[p].id == data.id){
