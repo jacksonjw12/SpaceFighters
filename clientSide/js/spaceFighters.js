@@ -107,7 +107,6 @@ function init() {
 	renderer = new THREE.WebGLRenderer( { antialias: true } );
 	renderer.setSize( window.innerWidth, window.innerHeight );
 	document.body.appendChild( renderer.domElement );				
-	sendData()
 }
 function playerMovement(){
 
@@ -260,7 +259,7 @@ function animate( time ) {
 
 
 
-	
+	sendData()
 	renderer.render( scene, camera );
 	prevTime = time
 
@@ -330,7 +329,7 @@ function sendData(){
 				"rotVelY":objects.fighter.rotVel.y,
 				"rotVelZ":objects.fighter.rotVel.z
 				})
-	window.setTimeout(sendData,16)
+	
 
 }
 
