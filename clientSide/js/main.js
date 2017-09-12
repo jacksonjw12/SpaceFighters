@@ -37,6 +37,7 @@ function setSockets(){
 	// })
 	socket.on("worldRefresh", function(data){
 		world = data.world
+		console.log("123")
 		//console.log(world)
 		
 	})
