@@ -98,7 +98,7 @@ function initializeSockets(server){
  					break;
  				}
  			}
- 			io.to("room1").emit("worldRefresh",{"world":getPlayerVisibleWorld()})
+ 			io.emit("worldRefresh",{"world":getPlayerVisibleWorld()})
  		})
 
 		socket.on('disconnect', function (data){ 	
