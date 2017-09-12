@@ -68,7 +68,7 @@ function initializeSockets(server){
 
  			console.log(p)
 
- 			console.log(world)
+ 			//console.log(world)
  		})
 
  		socket.on("location", function(data){
@@ -82,7 +82,16 @@ function initializeSockets(server){
  			}
  			socket.emit("worldRefresh",{"world":getPlayerVisibleWorld()})
  		})
- 		
+
+		socket.on('disconnect', function (data){ 	
+			console.log("disconnected")
+			for(var p = 0; p<world.players.length; p++){
+				if(world.players[p].socket == socket){
+					world.players.splice(p,1)
+					break;
+				}
+			}
+		})
  	})
 		
 		
