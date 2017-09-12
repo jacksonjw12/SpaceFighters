@@ -25,7 +25,9 @@ function sceneObjects(fMesh){
 			}
 			else if(this.playerIds.indexOf(world.players[p].id) > -1){
 				for(var e = 0; e<this.otherPlayers.length; e++){
+
 					if(this.otherPlayers[e].id == world.players[p].id){
+						
 						this.otherPlayers[e].mesh.position.x = world.players[p].location.x
 						this.otherPlayers[e].mesh.position.y = world.players[p].location.y
 						this.otherPlayers[e].mesh.position.z = world.players[p].location.z
@@ -55,7 +57,7 @@ function sceneObjects(fMesh){
 				enemy.rotation.x = world.players[p].rotation.x
 				enemy.rotation.y = world.players[p].rotation.y
 				enemy.rotation.z = world.players[p].rotation.z
-				var enemyObj = {"mesh":enemy,"vel":new THREE.Vector3(world.players[p].vel.x,world.players[p].vel.y,world.players[p].vel.z),"rotVel":new THREE.Vector3(world.players[p].rotVel.x,world.players[p].rotVel.y,world.players[p].rotVel.z)}
+				var enemyObj = {"id":world.players[p].id, "mesh":enemy,"vel":new THREE.Vector3(world.players[p].vel.x,world.players[p].vel.y,world.players[p].vel.z),"rotVel":new THREE.Vector3(world.players[p].rotVel.x,world.players[p].rotVel.y,world.players[p].rotVel.z)}
 				this.otherPlayers.push(enemyObj)
 				scene.add(enemy)
 			}
