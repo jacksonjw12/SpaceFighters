@@ -287,9 +287,9 @@ function playerMovement(){
 
 	//Add desired movement as a velocity
 	//Constants of movement and rotation
-	var acceleration = .02//.05
+	var acceleration = .05
 	var rotationalAcceleration = .05
-	var maxSpeed = 10//5
+	var maxSpeed = 6
 	var maxRotSpeed = 2
 
 	movement.multiplyScalar(acceleration)
