@@ -2,7 +2,7 @@
 
 var camera, scene, renderer;
 var geometry, material, fighter;
-var objects, keyboard
+var objects, keyboard, light, lightTrack
 var prevTime
 
 function sceneObjects(fMesh){
@@ -64,7 +64,50 @@ function sceneObjects(fMesh){
 		}
 	}
 }
+function createFighterGeometry(s){
+	var geometry = new THREE.Geometry()
+	geometry.vertices.push(
+		new THREE.Vector3(0,0,0),//0
+		new THREE.Vector3(.5*s,   0,      .5*s),//1
+		new THREE.Vector3(.5*s,   0,      1*s),//2
+		new THREE.Vector3(0,       .25*s,  .5*s),//
+		new THREE.Vector3(0,       0*s,   .75*s),
+		new THREE.Vector3(-.5*s,    0,      .5*s),
+		new THREE.Vector3(-.5*s,    0,      1*s)
 
+	)
+	var normal = new THREE.Vector3( 0, -1, 0 );
+	var normal2 = new THREE.Vector3( 0, 1, 0 );
+
+	var color = new THREE.Color( 0x000000 );
+	geometry.faces.push( 
+		new THREE.Face3( 0, 1, 3,normal,0xffffff*Math.random() ) ,
+		new THREE.Face3( 3, 1, 4,normal,0xffffff*Math.random() ) ,
+		new THREE.Face3( 1, 2, 4,normal,0xffffff*Math.random() ) ,
+		new THREE.Face3( 0, 3, 5,normal,0xffffff*Math.random() ) ,
+		new THREE.Face3( 5, 3, 4,normal,0xffffff*Math.random() ) ,
+		new THREE.Face3( 4, 6, 5,normal,0xffffff*Math.random() ) ,
+		new THREE.Face3( 3, 1, 0,normal2,0xffffff*Math.random() ) ,
+		new THREE.Face3( 4, 1, 3,normal2,0xffffff*Math.random() ) ,
+		new THREE.Face3( 4, 2, 1,normal2,0xffffff*Math.random() ) ,
+		new THREE.Face3( 5, 3, 0,normal2,0xffffff*Math.random() ) ,
+		new THREE.Face3( 4, 3, 5,normal2,0xffffff*Math.random() ) ,
+		new THREE.Face3( 5, 6, 4,normal2,0xffffff*Math.random() ) 
+
+	);
+	return geometry
+}
+
+function createAsteroidGeometry(s){
+	var geometry = new THREE.SphereGeometry( s, 6, 6 );
+	for(var i = 0; i< geometry.vertices.length; i++){
+		if(Math.random() > .5){
+			geometry.vertices[i].multiplyScalar(Math.random()/2+1)
+		}
+	}
+	return geometry
+
+}
 
 function init() {
 	prevTime = 0
@@ -80,35 +123,94 @@ function init() {
 	scene = new THREE.Scene();
 	scene.background = new THREE.Color( 0x8a8a8a );
 
-	var light = new THREE.HemisphereLight( 0xffffff, 0x000000, 1 );
-	scene.add( light );
+	var ambLight = new THREE.AmbientLight( 0x909090 ); // soft white light
+	scene.add( ambLight );
 
-	materialWire = new THREE.MeshPhongMaterial( { color: 0x88bb88, specular: 0xffffff, wireframe:true } );
-	geometry = new THREE.BoxGeometry(1,1, 1 );
-	fighter = new THREE.Mesh( geometry, materialWire );
-	scene.add( fighter );
+
+	light = new THREE.PointLight( 0xffffff, 1, 100 );
+	scene.add( light );
+	var sphereSize = 1;
+	var pointLightHelper = new THREE.PointLightHelper( light, sphereSize );
+	scene.add( pointLightHelper );
+
+	fighterMaterial = new THREE.MeshPhongMaterial( 
+		{ 	color: 0x88bb88, 
+			specular: 0xffffff,
+			polygonOffset: true,
+    		polygonOffsetFactor: 1, // positive value pushes polygon further away
+    		polygonOffsetUnits: 1
+    	} 
+    );
+    geometry = createFighterGeometry(1)//new THREE.BoxGeometry(1,1, 1 );
+    fighter = new THREE.Mesh( geometry, fighterMaterial );
+    scene.add( fighter );
 	objects = new sceneObjects(fighter)
 
-	material = new THREE.MeshPhongMaterial( { color: 0xff0000, specular: 0xffffff, wireframe:false } );
+	
+	//WF
+	var geo = new THREE.EdgesGeometry( fighter.geometry ); // or WireframeGeometry
+	var mat = new THREE.LineBasicMaterial( { color: 0x0000000, linewidth: 1 } );
 
-	asteroidGeo = new THREE.BoxGeometry(1,1,1);
-	ast1 = new THREE.Mesh(asteroidGeo,material)
+
+	asteroidMaterial = new THREE.MeshPhongMaterial( 
+		{ 	color: 0x8b8cdd, 
+			specular: 0x111122,
+			polygonOffset: true,
+    		polygonOffsetFactor: 1, // positive value pushes polygon further away
+    		polygonOffsetUnits: 1,
+    		shininess:0
+    	} 
+    );
+
+
+	asteroidGeo = createFighterGeometry(1)//new THREE.BoxGeometry(1,1,1);
+	ast1 = new THREE.Mesh(asteroidGeo,asteroidMaterial)
 	ast1.position.z=-3
 	scene.add(ast1)
+	var wireframe1 = new THREE.LineSegments( geo, mat );
 
-	material = new THREE.MeshPhongMaterial( { color: 0x00ff00, specular: 0xffffff, wireframe:false } );
+	ast1.add(wireframe1)
 
-	ast2= new THREE.Mesh(asteroidGeo,material)
+	ast2= new THREE.Mesh(asteroidGeo,fighterMaterial)
 	ast2.position.z=-3
 	ast2.position.x = 2
 	scene.add(ast2)
-	
+	var wireframe2 = new THREE.LineSegments( geo, mat );
+	ast2.add(wireframe2)
 
 
 
-	renderer = new THREE.WebGLRenderer( { antialias: true } );
+	for(var a = 0; a<20*Math.random()+20; a++){
+		var astG = createAsteroidGeometry(2)
+		var astM = new THREE.MeshPhongMaterial( 
+			{ 	color: 0xffffff*Math.random(), 
+				specular: 0x111122,
+				polygonOffset: true,
+	    		polygonOffsetFactor: 1, // positive value pushes polygon further away
+	    		polygonOffsetUnits: 1,
+	    		shininess:0
+    		} 
+    	);
+    	var astWFGeo = new THREE.EdgesGeometry( astG ); // or WireframeGeometry
+		var astWFMat = new THREE.LineBasicMaterial( { color: 0xffffff, linewidth: 1 , opacity:.5, transparent:true} );
+    	var wfAst = new THREE.LineSegments( astWFGeo, astWFMat );
+    	var ast = new THREE.Mesh(astG,astM)
+    	ast.position.x = (Math.random()-.5)*100
+    	ast.position.y =(Math.random()-.5)*100
+    	ast.position.z = (Math.random()-.5)*100
+    	scene.add(ast)
+    	ast.add(wfAst)
+
+
+
+
+	}
+
+
+	var canvasElem = document.getElementById("gameCanvas")
+	renderer = new THREE.WebGLRenderer( { antialias: true, canvas: canvasElem } );
 	renderer.setSize( window.innerWidth, window.innerHeight );
-	document.body.appendChild( renderer.domElement );				
+	//document.body.appendChild( renderer.domElement );				
 }
 function playerMovement(){
 
@@ -208,6 +310,11 @@ function animate( time ) {
 	dRot.multiplyScalar(dt)
 
 
+	light.position.x = 3*Math.sin(time/1000)
+	light.position.z = 3*Math.cos(time/1000) - 3
+	light.position.y = 3*Math.cos(time/1000)
+	
+
 	//objects.fighter.mesh.rotation.x+= dRot.x//(dRot)
 	//objects.fighter.mesh.rotation.y+= dRot.y//(dRot)
 	//console.log(dRot)
@@ -219,6 +326,19 @@ function animate( time ) {
 	objects.fighter.mesh.rotateX(dRot.x)
 	objects.fighter.mesh.rotateY(dRot.y)
 	objects.fighter.mesh.rotateZ(dRot.z)
+
+
+		// var fMeshPos = new THREE.Vector3()
+		// fMeshPos.copy(objects.fighter.mesh.position)
+		// var fMeshRotVec = new THREE.Vector3()
+		// fMeshRotVec.copy(objects.fighter.mesh.rotation)
+		// fMeshRotVec.normalize()
+		// fMeshRotVec.x+=Math.PI
+		// fMeshRotVec.y+=Math.PI
+		// fMeshRotVec.z+=Math.PI
+
+	//fMeshPos.add(fMeshRotVec)
+
 
 
 	camera.rotation.x = objects.fighter.mesh.rotation.x
