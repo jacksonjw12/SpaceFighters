@@ -1,5 +1,5 @@
 //File Contains Game Related Elements and functions
-
+//important game objects
 var camera, scene, renderer;
 var geometry, material, fighter;
 var objects, keyboard, light, lightTrack
@@ -48,8 +48,15 @@ function sceneObjects(fMesh){
 
 			else{
 				this.playerIds.push(world.players[p].id)
-				var material = new THREE.MeshPhongMaterial( { color: Math.random()*0xffffff, specular: 0xffffff, wireframe:false } );
-				var geometry = new THREE.BoxGeometry(1,1,1 );
+				var material = new THREE.MeshPhongMaterial( {
+					color: Math.random()*0xffffff, 
+					specular: 0xffffff,
+					polygonOffset: true,
+		    		polygonOffsetFactor: 1, // positive value pushes polygon further away
+		    		polygonOffsetUnits: 1
+
+				} );
+				var geometry = createFighterGeometry(1)//new THREE.BoxGeometry(1,1,1 );
 				enemy = new THREE.Mesh( geometry, material );
 				enemy.position.x = world.players[p].location.x
 				enemy.position.y = world.players[p].location.y
@@ -60,10 +67,18 @@ function sceneObjects(fMesh){
 				var enemyObj = {"id":world.players[p].id, "mesh":enemy,"vel":new THREE.Vector3(world.players[p].vel.x,world.players[p].vel.y,world.players[p].vel.z),"rotVel":new THREE.Vector3(world.players[p].rotVel.x,world.players[p].rotVel.y,world.players[p].rotVel.z)}
 				this.otherPlayers.push(enemyObj)
 				scene.add(enemy)
+
+				var geo = new THREE.EdgesGeometry( enemy.geometry ); // or WireframeGeometry
+				var mat = new THREE.LineBasicMaterial( { color: 0x0000000, linewidth: 1 } );
+				var enemyWF = new THREE.LineSegments( geo, mat );
+				enemy.add(enemyWF)
+
 			}
 		}
 	}
 }
+
+//GEOMETRIES
 function createFighterGeometry(s){
 	var geometry = new THREE.Geometry()
 	geometry.vertices.push(
@@ -109,74 +124,79 @@ function createAsteroidGeometry(s){
 
 }
 
-function init() {
-	prevTime = 0
 
-	keyboard = new Keyboard()
-
-
-	camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 100 );
-	//camera.position.z = -10;
-	//camera.position.y = 1
-	//camera.rotation.y = Math.PI
-
-	scene = new THREE.Scene();
-	scene.background = new THREE.Color( 0x8a8a8a );
-
-	var ambLight = new THREE.AmbientLight( 0x909090 ); // soft white light
-	scene.add( ambLight );
-
-
-	light = new THREE.PointLight( 0xffffff, 1, 100 );
-	scene.add( light );
-	var sphereSize = 1;
-	var pointLightHelper = new THREE.PointLightHelper( light, sphereSize );
-	scene.add( pointLightHelper );
-
-	fighterMaterial = new THREE.MeshPhongMaterial( 
-		{ 	color: 0x88bb88, 
+//MATERIALS
+function createFighterMaterial(c){
+	var mat = new THREE.MeshPhongMaterial( 
+		{ 	color: c, 
 			specular: 0xffffff,
 			polygonOffset: true,
     		polygonOffsetFactor: 1, // positive value pushes polygon further away
     		polygonOffsetUnits: 1
     	} 
     );
+    return mat
+}
+function createAsteroidMaterial(c){
+
+}
+
+//WIREFRAME
+function createWireFrame(g){
+	//WF
+	var geo = new THREE.EdgesGeometry( g ); // or WireframeGeometry
+	var mat = new THREE.LineBasicMaterial( { color: 0x0000000, linewidth: 1 } );
+	var wf = new THREE.LineSegments( geo, mat );
+	return wf
+}
+
+function init() {
+	prevTime = 0
+
+	keyboard = new Keyboard()
+
+	camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 100 );
+	
+	scene = new THREE.Scene();
+	scene.background = new THREE.Color( 0x8a8a8a );
+
+	var ambLight = new THREE.AmbientLight( 0x909090 );//ambient game light
+	scene.add( ambLight );
+
+
+	light = new THREE.PointLight( 0xffffff, 1, 100 );//rotating temp point light
+	scene.add( light );
+	var sphereSize = 1;
+	var pointLightHelper = new THREE.PointLightHelper( light, sphereSize );
+	scene.add( pointLightHelper );
+
+
+	fighterMaterial = createFighterMaterial(0x88bb88)
     geometry = createFighterGeometry(1)//new THREE.BoxGeometry(1,1, 1 );
     fighter = new THREE.Mesh( geometry, fighterMaterial );
     scene.add( fighter );
 	objects = new sceneObjects(fighter)
 
 	
-	//WF
-	var geo = new THREE.EdgesGeometry( fighter.geometry ); // or WireframeGeometry
-	var mat = new THREE.LineBasicMaterial( { color: 0x0000000, linewidth: 1 } );
 
+	//create dummy fighter 1
+	testFighter1Mat = createFighterMaterial(0x88bb88)
+	testFighter1Geo = createFighterGeometry(1)//new THREE.BoxGeometry(1,1,1);
+	testFighter1 = new THREE.Mesh(testFighter1Geo,testFighter1Mat)
+	testFighter1.position.z=-3
+	var wireframe1 = createWireFrame(testFighter1.geometry)
+	testFighter1.add(wireframe1)
+	scene.add(testFighter1)
 
-	asteroidMaterial = new THREE.MeshPhongMaterial( 
-		{ 	color: 0x8b8cdd, 
-			specular: 0x111122,
-			polygonOffset: true,
-    		polygonOffsetFactor: 1, // positive value pushes polygon further away
-    		polygonOffsetUnits: 1,
-    		shininess:0
-    	} 
-    );
-
-
-	asteroidGeo = createFighterGeometry(1)//new THREE.BoxGeometry(1,1,1);
-	ast1 = new THREE.Mesh(asteroidGeo,asteroidMaterial)
-	ast1.position.z=-3
-	scene.add(ast1)
-	var wireframe1 = new THREE.LineSegments( geo, mat );
-
-	ast1.add(wireframe1)
-
-	ast2= new THREE.Mesh(asteroidGeo,fighterMaterial)
-	ast2.position.z=-3
-	ast2.position.x = 2
-	scene.add(ast2)
-	var wireframe2 = new THREE.LineSegments( geo, mat );
-	ast2.add(wireframe2)
+	//create dummy fighter 2
+	testFighter2Mat = createFighterMaterial(0x8b8cdd)
+	testFighter2Geo = createFighterGeometry(1)//new THREE.BoxGeometry(1,1,1);
+	testFighter2 = new THREE.Mesh(testFighter2Geo,testFighter2Mat)
+	testFighter2.position.z=-3
+	testFighter2.position.x=2
+	var wireframe2 = createWireFrame(testFighter2.geometry)
+	testFighter2.add(wireframe2)
+	scene.add(testFighter2)
 
 
 
@@ -249,31 +269,27 @@ function playerMovement(){
 	if(keyboard.keysDown.indexOf("'") > -1){
 		rotation.y--
 	}
-	if(keyboard.keysDown.indexOf("¿") > -1){//rotation around y axis: yaw
+	if(keyboard.keysDown.indexOf("¿") > -1){//rotation around z axis: roll
 		rotation.z++
 	}
 	if(keyboard.keysDown.indexOf(16) > -1){
 		rotation.z--
 	}
-	//may add roll here so rotation around z axis
 	//_______________________________________
 
 	movement.normalize()
 	rotation.normalize()
 
 	//Translate movement from fighter to world space
-	 // movement.applyAxisAngle(new THREE.Vector3(1,0,0), objects.fighter.mesh.rotation.x)
-	 // movement.applyAxisAngle(new THREE.Vector3(0,1,0), objects.fighter.mesh.rotation.y)
-	 // movement.applyAxisAngle(new THREE.Vector3(0,0,1), objects.fighter.mesh.rotation.z)
 	movement.transformDirection(objects.fighter.mesh.matrixWorld)
 
 
 
 	//Add desired movement as a velocity
 	//Constants of movement and rotation
-	var acceleration = .05
+	var acceleration = .02//.05
 	var rotationalAcceleration = .05
-	var maxSpeed = 5
+	var maxSpeed = 10//5
 	var maxRotSpeed = 2
 
 	movement.multiplyScalar(acceleration)
@@ -308,39 +324,15 @@ function animate( time ) {
 	dRot = new THREE.Vector3()
 	dRot.copy(objects.fighter.rotVel)
 	dRot.multiplyScalar(dt)
-
-
-	light.position.x = 3*Math.sin(time/1000)
-	light.position.z = 3*Math.cos(time/1000) - 3
-	light.position.y = 3*Math.cos(time/1000)
-	
-
-	//objects.fighter.mesh.rotation.x+= dRot.x//(dRot)
-	//objects.fighter.mesh.rotation.y+= dRot.y//(dRot)
-	//console.log(dRot)
-	//var looking = new THREE.Vector3(dRot.x,dRot.y)
-	// objects.fighter.mesh.translateX(dMove.x)
-	// objects.fighter.mesh.translateY(dMove.y)
-	// objects.fighter.mesh.translateZ(dMove.z)
-
 	objects.fighter.mesh.rotateX(dRot.x)
 	objects.fighter.mesh.rotateY(dRot.y)
 	objects.fighter.mesh.rotateZ(dRot.z)
 
-
-		// var fMeshPos = new THREE.Vector3()
-		// fMeshPos.copy(objects.fighter.mesh.position)
-		// var fMeshRotVec = new THREE.Vector3()
-		// fMeshRotVec.copy(objects.fighter.mesh.rotation)
-		// fMeshRotVec.normalize()
-		// fMeshRotVec.x+=Math.PI
-		// fMeshRotVec.y+=Math.PI
-		// fMeshRotVec.z+=Math.PI
-
-	//fMeshPos.add(fMeshRotVec)
+	
+	
 
 
-
+	//move camera to fighter position and rotation
 	camera.rotation.x = objects.fighter.mesh.rotation.x
 	camera.rotation.y = objects.fighter.mesh.rotation.y
 	camera.rotation.z = objects.fighter.mesh.rotation.z
@@ -348,17 +340,14 @@ function animate( time ) {
 	camera.position.y = objects.fighter.mesh.position.y
 	camera.position.z = objects.fighter.mesh.position.z
 
-	//console.log(objects.fighter.mesh.rotation)
-
-	// objects.fighter.mesh.rotation.applyAxisAngle(new THREE.Vector3(1,0,0), objects.fi)
-	// pitchAxis = new Three.Vector3()
-	// pitchAxis.copy(objects.fighter.mesh.rotation)
-	// pitchAxis.applyAxisAngle()
-	// yawAxis = new Three.Vector3()
-	// yawAxis.copy(objects.fighter.mesh.rotation)
-
+	//calculate and implement rotational decay
 	var rotationalDecay = Math.pow(1.02, 1000 * dt / 16)
 	objects.fighter.rotVel.divideScalar(rotationalDecay)
+
+	//move temp test light
+	light.position.x = 3*Math.sin(time/1000)
+	light.position.z = 3*Math.cos(time/1000) - 3
+	light.position.y = 3*Math.cos(time/1000)
 
 
 	//move For Other players
@@ -381,7 +370,7 @@ function animate( time ) {
 
 
 
-	sendData()
+	sendData()//send player data to server
 	renderer.render( scene, camera );
 	prevTime = time
 
@@ -395,8 +384,6 @@ function Keyboard(){
 	this.prevTime = new Date();
 	document.addEventListener('keydown', function(event){
 	
-		
-		
 		if(event.keyCode > 31){
 			var keyChar = String.fromCharCode(event.keyCode);
 			if(keys.indexOf(keyChar) == -1){
@@ -410,8 +397,6 @@ function Keyboard(){
 			}
 		}
 		
-
-
 		});
 
 	document.addEventListener('keyup', function(event){
@@ -432,24 +417,23 @@ function Keyboard(){
 
 	})
 
-
-
 }
 function sendData(){
-	socket.emit("playerData",{
-				"id":id,
-				"x":objects.fighter.mesh.position.x,
-				"y":objects.fighter.mesh.position.y,
-				"z":objects.fighter.mesh.position.z,
-				"rotX":objects.fighter.mesh.rotation.x,
-				"rotY":objects.fighter.mesh.rotation.y,
-				"rotZ":objects.fighter.mesh.rotation.z,
-				"velX":objects.fighter.vel.x,
-				"velY":objects.fighter.vel.y,
-				"velZ":objects.fighter.vel.z,
-				"rotVelX":objects.fighter.rotVel.x,
-				"rotVelY":objects.fighter.rotVel.y,
-				"rotVelZ":objects.fighter.rotVel.z
+	socket.emit(
+		"playerData",{
+					"id":id,
+					"x":objects.fighter.mesh.position.x,
+					"y":objects.fighter.mesh.position.y,
+					"z":objects.fighter.mesh.position.z,
+					"rotX":objects.fighter.mesh.rotation.x,
+					"rotY":objects.fighter.mesh.rotation.y,
+					"rotZ":objects.fighter.mesh.rotation.z,
+					"velX":objects.fighter.vel.x,
+					"velY":objects.fighter.vel.y,
+					"velZ":objects.fighter.vel.z,
+					"rotVelX":objects.fighter.rotVel.x,
+					"rotVelY":objects.fighter.rotVel.y,
+					"rotVelZ":objects.fighter.rotVel.z
 				})
 	
 
