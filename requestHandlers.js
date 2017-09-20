@@ -8,6 +8,7 @@ var world = {
 	// 	"name":"jack"
 		//Location:xyz
 		//Rotationxyz
+		//time updated?
 	//later include private id only server and client know
 	// }
 
@@ -48,6 +49,7 @@ function getPlayerVisibleWorld(){
 		wp.rotation = world.players[p].rotation
 		wp.vel = world.players[p].vel
 		wp.rotVel = world.players[p].rotVel
+		wp.timeStamp = world.players[p].timeStamp
 		w.players.push(wp)
 	}
 	return w
@@ -67,6 +69,7 @@ function initializeSockets(server){
  			p.rotation = {"x":0,"y":0,"z":0}
  			p.vel = {"x":0,"y":0,"z":0}
  			p.rotVel = {"x":0,"y":0,"z":0}
+ 			p.timeStamp = (new Date()).getTime()
 
 
  			world.players.push(p)
@@ -95,7 +98,7 @@ function initializeSockets(server){
  					world.players[p].rotVel.x = data.rotVelX
  					world.players[p].rotVel.y = data.rotVelY
  					world.players[p].rotVel.z = data.rotVelZ
-
+ 					world.players[p].timeStamp = (new Date()).getTime()
 
  					break;
  				}

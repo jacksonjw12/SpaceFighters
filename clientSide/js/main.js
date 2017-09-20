@@ -12,7 +12,11 @@ function startGame(){//assure game data is set first
 	init()
 	requestAnimationFrame( animate );
 }
+function ready(){
+	window.setTimeout(gameLoop,30)
 
+
+}
 function setSockets(){
 	socket = io()
 
@@ -37,7 +41,7 @@ function setSockets(){
 	// })
 	socket.on("worldRefresh", function(data){
 		world = data.world
-		
+
 		//console.log(world)
 		
 	})

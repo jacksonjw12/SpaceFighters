@@ -1,0 +1,7 @@
+TODO
+set asteroids in server space
+figure out background tab stuff
+collision with asteroids
+shooting
+collection of shoot objects
+skybox

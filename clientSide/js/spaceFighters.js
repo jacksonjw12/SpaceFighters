@@ -3,7 +3,7 @@
 var camera, scene, renderer;
 var geometry, material, fighter;
 var objects, keyboard, light, lightTrack
-var prevTime
+var prevTime, testFighter1, testFighter2
 
 function sceneObjects(fMesh){
 	//Fighter is the player controlled object
@@ -26,7 +26,7 @@ function sceneObjects(fMesh){
 			else if(this.playerIds.indexOf(world.players[p].id) > -1){
 				for(var e = 0; e<this.otherPlayers.length; e++){
 
-					if(this.otherPlayers[e].id == world.players[p].id){
+					if(this.otherPlayers[e].id == world.players[p].id && this.otherPlayers[e].timeStamp < world.players[p].timeStamp){
 						
 						this.otherPlayers[e].mesh.position.x = world.players[p].location.x
 						this.otherPlayers[e].mesh.position.y = world.players[p].location.y
@@ -40,6 +40,7 @@ function sceneObjects(fMesh){
 						this.otherPlayers[e].rotVel.x = world.players[p].rotVel.x
 						this.otherPlayers[e].rotVel.y = world.players[p].rotVel.y
 						this.otherPlayers[e].rotVel.z = world.players[p].rotVel.z
+
 
 					}
 				}
@@ -64,7 +65,7 @@ function sceneObjects(fMesh){
 				enemy.rotation.x = world.players[p].rotation.x
 				enemy.rotation.y = world.players[p].rotation.y
 				enemy.rotation.z = world.players[p].rotation.z
-				var enemyObj = {"id":world.players[p].id, "mesh":enemy,"vel":new THREE.Vector3(world.players[p].vel.x,world.players[p].vel.y,world.players[p].vel.z),"rotVel":new THREE.Vector3(world.players[p].rotVel.x,world.players[p].rotVel.y,world.players[p].rotVel.z)}
+				var enemyObj = {"id":world.players[p].id,"timeStamp":world.players[p].timeStamp, "mesh":enemy,"vel":new THREE.Vector3(world.players[p].vel.x,world.players[p].vel.y,world.players[p].vel.z),"rotVel":new THREE.Vector3(world.players[p].rotVel.x,world.players[p].rotVel.y,world.players[p].rotVel.z)}
 				this.otherPlayers.push(enemyObj)
 				scene.add(enemy)
 
@@ -166,9 +167,9 @@ function init() {
 
 	light = new THREE.PointLight( 0xffffff, 1, 100 );//rotating temp point light
 	scene.add( light );
-	var sphereSize = 1;
-	var pointLightHelper = new THREE.PointLightHelper( light, sphereSize );
-	scene.add( pointLightHelper );
+	// var sphereSize = 1;
+	// var pointLightHelper = new THREE.PointLightHelper( light, sphereSize );
+	// scene.add( pointLightHelper );
 
 
 	fighterMaterial = createFighterMaterial(0x88bb88)
@@ -200,7 +201,7 @@ function init() {
 
 
 
-	for(var a = 0; a<20*Math.random()+20; a++){
+	for(var a = 0; a<20*Math.random()+40; a++){
 		var astG = createAsteroidGeometry(2)
 		var astM = new THREE.MeshPhongMaterial( 
 			{ 	color: 0xffffff*Math.random(), 
@@ -222,17 +223,41 @@ function init() {
     	ast.add(wfAst)
 
 
-
-
 	}
 
 
 	var canvasElem = document.getElementById("gameCanvas")
 	renderer = new THREE.WebGLRenderer( { antialias: true, canvas: canvasElem } );
 	renderer.setSize( window.innerWidth, window.innerHeight );
-	//document.body.appendChild( renderer.domElement );				
+	//document.body.appendChild( renderer.domElement );			
+	//window.setInterval(tick, 1)
+	requestAnimationFrame(animate)
+
+	
 }
-function playerMovement(){
+
+var prevTimeLoop = 0
+function gameLoop(){
+	if(prevTimeLoop == 0){
+		prevTimeLoop = (new Date()).getTime()
+	}
+	objects.refreshWorld()
+	
+	if (document.hidden == true) {//turn off keyboard controls while page is hidden
+		console.log("erasing")
+    	keyboard.reset()
+	}
+	var timeLoop = (new Date()).getTime()
+	var dtLoop = timeLoop-prevTimeLoop
+	prevTimeLoop = timeLoop
+	playerMovement(dtLoop)
+
+
+}
+
+
+
+function playerMovement(dt){
 
 	//Turn Players Keyboard entries into desired movements and rotations
 	//______________________________________
@@ -287,13 +312,13 @@ function playerMovement(){
 
 	//Add desired movement as a velocity
 	//Constants of movement and rotation
-	var acceleration = .05
+	var acceleration = .02
 	var rotationalAcceleration = .05
 	var maxSpeed = 6
 	var maxRotSpeed = 2
 
-	movement.multiplyScalar(acceleration)
-	rotation.multiplyScalar(rotationalAcceleration)
+	movement.multiplyScalar(acceleration*dt/16) //dt/16 represents dt/60fps 
+	rotation.multiplyScalar(rotationalAcceleration*dt/16)
 	objects.fighter.vel.add(movement)
 	objects.fighter.rotVel.add(rotation)
 	
@@ -301,19 +326,18 @@ function playerMovement(){
 	objects.fighter.rotVel.clampLength(-maxRotSpeed, maxRotSpeed)
 
 
+}
+function tick(){
+
 
 }
-
 function animate( time ) {
-	objects.refreshWorld()
-	//console.log(world)
+	// objects.refreshWorld()
 
 	dt = (time - prevTime)/1000
-	requestAnimationFrame( animate );
 
 	// fighter.rotation.x = time * 0.0005;
 	// fighter.rotation.y = time * 0.001;
-	playerMovement()
 	
 	//Move The Fighter
 	dMove = new THREE.Vector3()
@@ -344,10 +368,31 @@ function animate( time ) {
 	var rotationalDecay = Math.pow(1.02, 1000 * dt / 16)
 	objects.fighter.rotVel.divideScalar(rotationalDecay)
 
-	//move temp test light
-	light.position.x = 3*Math.sin(time/1000)
-	light.position.z = 3*Math.cos(time/1000) - 3
-	light.position.y = 3*Math.cos(time/1000)
+	//dummies
+	// testFighter1.rotation.y += .007
+	// testFighter1.position.x = -Math.sin(time/1000)
+	// testFighter1.position.z = -Math.cos(time/1000)
+	var dummyMove = new THREE.Vector3(0,0,-1)
+	//var dummyRot = new THREE.Vector3(0,Math.sin(time/10000),0)
+	dummyMove.normalize()
+	dummyMove.transformDirection(testFighter1.matrixWorld)
+	testFighter1.position.x += dummyMove.x /100
+	testFighter1.position.y += dummyMove.y /100
+	testFighter1.position.z += dummyMove.z /100
+	testFighter1.rotation.y = Math.cos(time/5000/1)*Math.PI
+	testFighter1.rotation.x = Math.sin(time/5000/1)
+
+	dummyMove2 = new THREE.Vector3(0,0,-1)
+	dummyMove2.transformDirection(testFighter2.matrixWorld)
+
+	testFighter2.position.x += dummyMove2.x /100
+	testFighter2.position.y += dummyMove2.y /100
+	testFighter2.position.z += dummyMove2.z /100
+	testFighter2.rotation.y = Math.cos(time/5000/1)*Math.PI
+
+
+
+
 
 
 	//move For Other players
@@ -373,6 +418,8 @@ function animate( time ) {
 	sendData()//send player data to server
 	renderer.render( scene, camera );
 	prevTime = time
+	requestAnimationFrame(animate)
+	gameLoop()
 
 }
 
@@ -382,6 +429,12 @@ function Keyboard(){
 	this.keysDown = [];
 	var keys = this.keysDown
 	this.prevTime = new Date();
+	this.reset = function(){
+		this.keysDown = []
+		keys = []
+		keys = this.keysDown
+
+	}
 	document.addEventListener('keydown', function(event){
 	
 		if(event.keyCode > 31){
