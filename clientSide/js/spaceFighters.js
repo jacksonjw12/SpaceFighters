@@ -40,6 +40,7 @@ function sceneObjects(fMesh){
 						this.otherPlayers[e].rotVel.x = world.players[p].rotVel.x
 						this.otherPlayers[e].rotVel.y = world.players[p].rotVel.y
 						this.otherPlayers[e].rotVel.z = world.players[p].rotVel.z
+						this.otherPlayers[e].timeStamp = world.players[p].timeStamp
 
 
 					}
@@ -333,6 +334,7 @@ function tick(){
 }
 function animate( time ) {
 	// objects.refreshWorld()
+	requestAnimationFrame(animate)
 
 	dt = (time - prevTime)/1000
 
@@ -393,18 +395,25 @@ function animate( time ) {
 
 
 
-
+	
 
 	//move For Other players
 	for(var e = 0; e< objects.otherPlayers.length; e++){
 		var v = new THREE.Vector3()
 		v.copy(objects.otherPlayers[e].vel)
-		v.multiplyScalar(dt)
-		objects.otherPlayers[e].mesh.position.add(v)
+		
+		
 
 		vR = new THREE.Vector3()
 		vR.copy(objects.otherPlayers[e].rotVel)
+
+		
+		v.multiplyScalar(dt)
 		vR.multiplyScalar(dt)
+
+		
+		objects.otherPlayers[e].mesh.position.add(v)
+		
 	
 		objects.otherPlayers[e].mesh.rotateX(vR.x)
 		objects.otherPlayers[e].mesh.rotateY(vR.y)
@@ -418,7 +427,6 @@ function animate( time ) {
 	sendData()//send player data to server
 	renderer.render( scene, camera );
 	prevTime = time
-	requestAnimationFrame(animate)
 	gameLoop()
 
 }
